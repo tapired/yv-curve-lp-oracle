@@ -9,7 +9,8 @@ import {IOracleRouter} from "./interfaces/IOracleRouter.sol";
 
 contract YearnCurveLPOracleStableSwap is IOracle {
     address public baseToken;
-    uint96 public baseTokenPoolIndex; // if the base token is in the pool this will be the index of the base token in coins[] array
+    uint8 private baseTokenDecimals;
+    uint88 public baseTokenPoolIndex; // if the base token is in the pool this will be the index of the base token in coins[] array
     address public yVault;
     address public curvePool;
     address[] public coins;
@@ -20,11 +21,11 @@ contract YearnCurveLPOracleStableSwap is IOracle {
         ORACLE_ROUTER = _oracleRouter;
     }
 
-    function initialize(address _yVault, address _curvePool, uint256 numCoins, bool isTokenPool, address _baseToken) {
+    function initialize(address _yVault, address _curvePool, uint256 numCoins, bool isTokenPool, address _baseToken) public {
         require(yVault == address(0), "already initialized");
 
         baseToken = _baseToken;
-        baseTokenPoolIndex = type(uint96).max;
+        baseTokenPoolIndex = type(uint88).max;
 
         yVault = _yVault;
         curvePool = _curvePool;
@@ -36,7 +37,7 @@ contract YearnCurveLPOracleStableSwap is IOracle {
         for (uint256 i = 0; i < numCoins;) {
             address coin = ICurveStableSwap(_curvePool).coins(i);
             if (coin == _baseToken) {
-                baseTokenPoolIndex = i;
+                baseTokenPoolIndex = uint88(i);
             }
             coins.push(coin);
             unchecked {
@@ -66,14 +67,23 @@ contract YearnCurveLPOracleStableSwap is IOracle {
         
         // now we need to convert to baseToken
         uint256 baseTokenPrice;
-        if (baseTokenPoolIndex != type(uint96).max) {
+        if (baseTokenPoolIndex != type(uint88).max) {
             baseTokenPrice = prices[baseTokenPoolIndex];
         } else {
             baseTokenPrice = IOracleRouter(ORACLE_ROUTER).price(baseToken);
         }
-
+        
+        // baseToken is the loan token. 
+        // lpPrice is in baseToken units but in 18 decimals.
         lpPrice = lpPrice * 1e18 / baseTokenPrice;
 
-        return lpPrice;
+        // by the definition in morpho:
+        // final return precision must need to be = 36 + loan token decimals - collateral token decimals
+        // loan token decimals is base token decimals.
+        // collateral token decimals is the yVault decimals, which is 18 always.
+        // so we need to return 36 + baseToken decimals - 18 
+        // 18 + baseToken decimals.
+
+        return lpPrice * baseTokenDecimals;
     }
 }

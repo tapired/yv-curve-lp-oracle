@@ -2,9 +2,9 @@ pragma solidity ^0.8.13;
 
 interface IYearnOracle {
     struct TokenInfo {
-        OracleType oracleType;
-        uint44 decimals; // token decimals
-        uint44 oraclePriceDecimals;
+        uint8 oracleType; // 0 = NONE, 1 = CHAINLINK, 2 = API3, 3 = UNISWAP_V3, 4 = REDSTONE
+        uint8 decimals; // token decimals
+        uint80 oraclePriceDecimals;
         address priceFeed;
     }
 
