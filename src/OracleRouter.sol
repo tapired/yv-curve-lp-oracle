@@ -37,12 +37,17 @@ contract OracleRouter {
         return IYearnOracle(_oracle).price(tokenInfo);
     }
 
+    // can only add new oracle types cant alter the existing ones. 
     function addOracleType(uint8 _oracleType, address _oracle) external {
         require(msg.sender == management, "!management");
+        require(oracles[_oracleType] == address(0), "oracle already registered");
         oracles[_oracleType] = _oracle;
     }
 
-    // function addToken(IYearnOracle.TokenInfo calldata _tokenInfo) external {
-    //     tokens.push(_tokenInfo);
-    // }
+    // can only add new tokens cant alter the existing ones. 
+    function addToken(address _token, IYearnOracle.TokenInfo calldata _tokenInfo) external {
+        require(msg.sender == management, "!management");
+        require(tokenInfos[_token].oracleType == 0, "token already registered");
+        tokenInfos[_token] = _tokenInfo;
+    }
 }

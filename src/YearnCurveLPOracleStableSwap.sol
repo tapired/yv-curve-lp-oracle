@@ -25,6 +25,7 @@ contract YearnCurveLPOracleStableSwap is IOracle {
         require(yVault == address(0), "already initialized");
 
         baseToken = _baseToken;
+        baseTokenDecimals = IERC20Metadata(_baseToken).decimals();
         baseTokenPoolIndex = type(uint88).max;
 
         yVault = _yVault;
@@ -64,7 +65,7 @@ contract YearnCurveLPOracleStableSwap is IOracle {
         // all curve lP tokens are in 18 decimals.
         uint256 pps = IYearnVault(yVault).pricePerShare();
         lpPrice = lpPrice * pps / 1e18;
-        
+
         // now we need to convert to baseToken
         uint256 baseTokenPrice;
         if (baseTokenPoolIndex != type(uint88).max) {
@@ -84,6 +85,8 @@ contract YearnCurveLPOracleStableSwap is IOracle {
         // so we need to return 36 + baseToken decimals - 18 
         // 18 + baseToken decimals.
 
-        return lpPrice * baseTokenDecimals;
+        //  36 + loan token decimals - collateral token decimals === 18 + 18 + loan to
+
+        return (lpPrice * 1e18 * 10**baseTokenDecimals) / 1e18;
     }
 }
