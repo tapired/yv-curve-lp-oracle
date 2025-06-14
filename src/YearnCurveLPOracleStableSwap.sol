@@ -58,6 +58,9 @@ contract YearnCurveLPOracleStableSwap is IOracle {
             }
         }
 
+        // this is a MUST since ETH+/ETH pool is using native ETH and
+        // the get_virtual_price is not protected by the reentrancy guard.
+        ICurveStableSwap(curvePool).claim_admin_fees();
         // this is always in 18 decimals
         uint256 lpPrice = ICurveStableSwap(curvePool).get_virtual_price();
         lpPrice = lpPrice * minPrice / 1e18;
